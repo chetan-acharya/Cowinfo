@@ -117,41 +117,51 @@ class _MyHomePageState extends State<MyHomePage> {
   Location location = Location();
   late LocationData previousLocationData;
   PermissionStatus _permissionGranted = PermissionStatus.denied;
-  List<AppointmentAvailabilityItem> appointmentAvailabilityItem = [];
 
   // get user location and check for available appointments in the location
   Future<List<AppointmentAvailabilityItem>>
       getUserLocationAndAppointmentAvailabilityList() async {
-    if (_serviceEnabled) {
-      _serviceEnabled = await location.serviceEnabled();
-      if (!_serviceEnabled) {
-        _serviceEnabled = await location.requestService();
+    final List<AppointmentAvailabilityItem> appointmentAvailabilityItem;
+    try {
+      if (_serviceEnabled) {
+        _serviceEnabled = await location.serviceEnabled();
         if (!_serviceEnabled) {
-          return appointmentAvailabilityItem;
+          _serviceEnabled = await location.requestService();
+          if (!_serviceEnabled) {
+            appointmentAvailabilityItem = [];
+            return appointmentAvailabilityItem;
+          }
         }
       }
-    }
-    if (_permissionGranted != PermissionStatus.granted) {
-      _permissionGranted = await location.hasPermission();
-      if (_permissionGranted == PermissionStatus.denied) {
-        _permissionGranted = await location.requestPermission();
-        if (_permissionGranted != PermissionStatus.granted) {
-          return appointmentAvailabilityItem;
+      if (_permissionGranted != PermissionStatus.granted) {
+        _permissionGranted = await location.hasPermission();
+        if (_permissionGranted == PermissionStatus.denied) {
+          _permissionGranted = await location.requestPermission();
+          if (_permissionGranted != PermissionStatus.granted) {
+            appointmentAvailabilityItem = [];
+            return appointmentAvailabilityItem;
+          }
         }
       }
+      if (!isLocationUpdated) {
+        LocationData _locationData = await location.getLocation();
+        prefs.setString('lat', _locationData.latitude.toString());
+        prefs.setString('long', _locationData.longitude.toString());
+        isLocationUpdated = true;
+        previousLocationData = _locationData;
+      }
+      appointmentAvailabilityItem = await BackendService.getInstance()
+          .getAppointmentAvailabilityByLatLong(
+              previousLocationData.latitude.toString(),
+              previousLocationData.longitude.toString(),
+              isHindi);
+    } catch (e) {
+      String lat = prefs.getString('lat') ?? '0';
+      String long = prefs.getString('long') ?? '0';
+      var appointmentAvailabilityItemPreviousLocation = await BackendService()
+          .getAppointmentAvailabilityByLatLong(lat, long, isHindi);
+      return appointmentAvailabilityItemPreviousLocation;
     }
-    if (!isLocationUpdated) {
-      LocationData _locationData = await location.getLocation();
-      prefs.setString('lat', _locationData.latitude.toString());
-      prefs.setString('long', _locationData.longitude.toString());
-      isLocationUpdated = true;
-      previousLocationData = _locationData;
-    }
-    appointmentAvailabilityItem = await BackendService.getInstance()
-        .getAppointmentAvailabilityByLatLong(
-            previousLocationData.latitude.toString(),
-            previousLocationData.longitude.toString(),
-            isHindi);
     return appointmentAvailabilityItem;
   }
 
