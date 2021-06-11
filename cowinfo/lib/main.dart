@@ -23,12 +23,18 @@ void callbackDispatcher() {
           AppointmentAvailabilityCalendarItem();
       for (var item in appointmentAvailabilityItem) {
         if (item.calendarAvailabilityDetail.name != '' &&
-            item.calendarAvailabilityDetail.slotDetail.length > 0) {
+            item.calendarAvailabilityDetail.slotDetail.length > 0 &&
+            int.parse(item.calendarAvailabilityDetail.slotDetail[0]
+                    .availableCapacity) >
+                0) {
           appointmentAvailabilityCalendarItem = item.calendarAvailabilityDetail;
           break;
         }
       }
-      if (appointmentAvailabilityCalendarItem.name != '') {
+      if (appointmentAvailabilityCalendarItem.name != '' &&
+          int.parse(appointmentAvailabilityCalendarItem
+                  .slotDetail[0].availableCapacity) >
+              0) {
         String username = 'codeninja300@gmail.com';
         String password = 'CodeNinja@300';
         String mailTopHeader =
